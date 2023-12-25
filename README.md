@@ -1,4 +1,4 @@
-# shopping_list_app
+# Shopping List App
 
 A new Flutter project.
 

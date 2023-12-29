@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
 import 'package:shopping_list_app/data/categories.dart';
 import 'package:shopping_list_app/models/category_model.dart';
 import 'package:shopping_list_app/models/grocery_item_model.dart';
@@ -18,15 +22,37 @@ class _NewItemState extends State<NewItem> {
   var _enteredQuantity = 1;
   var _selectedCategory = categories[Categories.vegetables]!;
 
-  void _saveItem() {
+  void _saveItem() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
+      final url = Uri.https(
+          'shop-list-tutorial-default-rtdb.firebaseio.com',
+          'shopping-list.json');
+
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(
+          {
+            'name': _enteredName,
+            'quantity': _enteredQuantity,
+            'category': _selectedCategory.title,
+          },
+        ),
+      );
+
+      final Map<String, dynamic> resData = json.decode(response.body);
+
+      if (!context.mounted) {
+        return;
+      }
+
       Navigator.of(context).pop(
-        GroceryItem(
-            id: DateTime.now().toString(),
+          GroceryItem(id: resData['name'],
             name: _enteredName,
             quantity: _enteredQuantity,
-            category: _selectedCategory),
+            category:_selectedCategory ,
+          )
       );
     }
   }
@@ -51,8 +77,12 @@ class _NewItemState extends State<NewItem> {
                 validator: (value) {
                   if (value == null ||
                       value.isEmpty ||
-                      value.trim().length <= 1 ||
-                      value.trim().length > 50) {
+                      value
+                          .trim()
+                          .length <= 1 ||
+                      value
+                          .trim()
+                          .length > 50) {
                     return 'Name should be of 1 to 50 characters';
                   }
                   return null;
